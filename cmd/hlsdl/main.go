@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
 	"os"
 
@@ -52,12 +53,24 @@ func cmdF(command *cobra.Command, args []string) error {
 }
 
 func downloadVodMovie(url string, dir string, workers int) error {
-	hlsDL := hlsdl.New(url, nil, dir, workers, true)
+	tmpDir, err := ioutil.TempDir(os.TempDir(), "hlsdownload-")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmpDir)
+
+	hlsDL := hlsdl.New(url, nil, tmpDir, workers, true)
 	filepath, err := hlsDL.Download()
 	if err != nil {
 		return err
 	}
-	log.Println("Downloaded file to " + filepath)
+
+	err = os.Rename(filepath, dir)
+	if err != nil {
+		return err
+	}
+
+	log.Println("Downloaded file to " + dir)
 	return nil
 }
 
